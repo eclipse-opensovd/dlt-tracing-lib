@@ -21,8 +21,7 @@ DltReturnValue registerApplication(const char *appId, const char *appDescription
     if (appId == NULL) {
         return DLT_RETURN_WRONG_PARAMETER;
     }
-    DLT_REGISTER_APP(appId, appDescription);
-    return DLT_RETURN_OK;
+    return dlt_register_app(appId, appDescription);
 }
 
 DltReturnValue unregisterApplicationFlushBufferedLogs(void) {
@@ -33,18 +32,12 @@ DltReturnValue dltFree(void) {
     return dlt_free();
 }
 
-DltContext *registerContext(const char *contextId, const char *contextDescription) {
+DltReturnValue registerContext(const char *contextId, const char *contextDescription, DltContext* context) {
     if (contextId == NULL) {
-        return NULL;
+        return DLT_RETURN_ERROR;
     }
 
-    DltContext *context = (DltContext *)malloc(sizeof(DltContext));
-    if (context == NULL) {
-        return NULL;
-    }
-
-    DLT_REGISTER_CONTEXT(*context, contextId, contextDescription);
-    return context;
+    return dlt_register_context(context, contextId, contextDescription);
 }
 
 DltReturnValue unregisterContext(DltContext *context) {
@@ -52,9 +45,7 @@ DltReturnValue unregisterContext(DltContext *context) {
         return DLT_RETURN_WRONG_PARAMETER;
     }
 
-    dlt_unregister_context(context);
-    free(context);
-    return DLT_RETURN_OK;
+    return dlt_unregister_context(context);
 }
 
 DltReturnValue logDlt(DltContext *context, DltLogLevelType logLevel, const char *message) {

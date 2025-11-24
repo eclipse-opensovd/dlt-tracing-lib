@@ -146,9 +146,11 @@ pub enum DltError {
     #[error("Data cannot be converted to a DLT compatible string: {0}")]
     InvalidString(String),
     #[error("Failed to register DLT context")]
-    ContextRegistrationFailed,
+    ContextRegistrationFailed(String),
     #[error("Failed to register DLT application")]
     ApplicationRegistrationFailed(String),
+    #[error("Failed to register a log event change listener")]
+    LogLevelListenerRegistrationFailed(String),
     #[error("A pointer or memory is invalid")]
     InvalidMemory,
     #[error("Failed to acquire a lock")]
@@ -534,19 +536,25 @@ impl DltContextHandle {
         })?;
 
         unsafe {
-            let context = dlt_sys::registerContext(ctx_id_c.as_ptr(), ctx_desc_c.as_ptr());
-            if context.is_null() {
-                Err(DltError::ContextRegistrationFailed)
-            } else {
-                Ok(DltContextHandle { context, _app: app })
-            }
+            let mut context = Box::new(std::mem::zeroed::<DltContext>());
+            let rv =
+                dlt_sys::registerContext(ctx_id_c.as_ptr(), ctx_desc_c.as_ptr(), context.as_mut());
+            DltSysError::from_return_code(rv)
+                .map_err(|e| DltError::ContextRegistrationFailed(format!("{e}")))?;
+
+            Ok(DltContextHandle {
+                context: Box::into_raw(context),
+                _app: app,
+            })
         }
     }
 
     fn raw_context(&self) -> Result<DltContext, DltError> {
         let context = unsafe {
             if self.context.is_null() {
-                return Err(DltError::ContextRegistrationFailed);
+                return Err(DltError::ContextRegistrationFailed(
+                    "Context pointer is null".to_string(),
+                ));
             }
             *self.context
         };
@@ -674,7 +682,7 @@ impl DltContextHandle {
                     Some(internal_log_level_callback),
                 );
                 DltSysError::from_return_code(ret)
-                    .map_err(|_| DltError::ContextRegistrationFailed)?;
+                    .map_err(|e| DltError::LogLevelListenerRegistrationFailed(format!("{e}")))?;
             }
             let (tx, rx) = broadcast::channel(5);
             let rx_clone = rx.resubscribe();
@@ -702,6 +710,9 @@ impl Drop for DltContextHandle {
 
         unsafe {
             dlt_sys::unregisterContext(self.context);
+            // free the memory allocated for the context
+            // not done in the C wrapper, because the wrapper also does not init it
+            let _ = Box::from_raw(self.context);
         }
     }
 }
