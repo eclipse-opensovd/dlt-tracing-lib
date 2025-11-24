@@ -122,7 +122,8 @@ unsafe extern "C" {
     pub fn registerContext(
         contextId: *const ::std::os::raw::c_char,
         contextDescription: *const ::std::os::raw::c_char,
-    ) -> *mut DltContext;
+        context: *mut DltContext,
+    ) -> DltReturnValue;
 }
 unsafe extern "C" {
     pub fn unregisterContext(context: *mut DltContext) -> DltReturnValue;

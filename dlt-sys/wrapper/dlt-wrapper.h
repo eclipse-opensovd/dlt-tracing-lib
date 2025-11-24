@@ -28,7 +28,7 @@ DltReturnValue unregisterApplicationFlushBufferedLogs(void);
 DltReturnValue dltFree(void);
 
 // Context management
-DltContext *registerContext(const char *contextId, const char *contextDescription);
+DltReturnValue registerContext(const char *contextId, const char *contextDescription, DltContext* context);
 DltReturnValue unregisterContext(DltContext *context);
 
 // Logging functions
