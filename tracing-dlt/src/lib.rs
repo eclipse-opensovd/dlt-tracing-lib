@@ -100,9 +100,9 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use dlt_rs::{DltContextHandle};
+use dlt_rs::DltContextHandle;
 // Re-export types for users of this library
-pub use dlt_rs::{DltError, DltId, DltSysError, DltLogLevel, DltApplication};
+pub use dlt_rs::{DltApplication, DltError, DltId, DltLogLevel, DltSysError};
 use indexmap::IndexMap;
 use tracing_core::{Event, Subscriber, span};
 use tracing_subscriber::{Layer, filter::LevelFilter, layer::Context, registry::LookupSpan};

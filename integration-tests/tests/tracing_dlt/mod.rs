@@ -12,8 +12,8 @@
  */
 use std::{sync::Arc, time::Duration};
 
-use tracing_dlt::{DltId, DltLayer, DltApplication, DltLogLevel};
 use serial_test::serial;
+use tracing_dlt::{DltApplication, DltId, DltLayer, DltLogLevel};
 use tracing_subscriber::{Registry, layer::SubscriberExt};
 
 use crate::{DltReceiver, assert_contains, change_dlt_log_level, ensure_dlt_daemon_running};
