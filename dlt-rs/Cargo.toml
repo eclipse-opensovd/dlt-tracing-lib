@@ -10,11 +10,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "dlt-tracing-appender"
+name = "dlt-rs"
 version = "0.1.0"
 edition.workspace = true
 publish = false
-description = "Appender for tracing crate to write tracing spans and events to DLT using dlt-sys"
+description = "Safe and idiomatic Rust wrapper for the C library libdlt to provide DLT logging capabilities for Rust applications"
 homepage.workspace = true
 license.workspace = true
 
@@ -25,22 +25,21 @@ workspace = true
 path = "src/lib.rs"
 
 [dependencies]
-# internal dependencies
 dlt-sys = { workspace = true }
 
 # external
 tokio = { workspace = true }
-indexmap = { workspace = true }
-
-# logging & tracing
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["registry"] }
-tracing-core = { workspace = true }
-crc32fast = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
-tokio = { workspace = true, features = ["test-util", "macros"] }
+tokio = { workspace = true, features = [
+  "test-util",
+  "macros",
+  "rt-multi-thread",
+] }
 
 [features]
-default = ["dlt_layer_internal_logging"]
-dlt_layer_internal_logging = []
+default = []
+trace_load_ctrl = []
+
+[build-dependencies]

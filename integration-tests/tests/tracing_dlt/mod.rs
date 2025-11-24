@@ -12,8 +12,7 @@
  */
 use std::{sync::Arc, time::Duration};
 
-use dlt_sys::{DltApplication, DltLogLevel};
-use dlt_tracing_appender::{DltId, DltLayer};
+use tracing_dlt::{DltId, DltLayer, DltApplication, DltLogLevel};
 use serial_test::serial;
 use tracing_subscriber::{Registry, layer::SubscriberExt};
 
@@ -81,9 +80,9 @@ async fn test_tracing_to_dlt() {
     tokio::time::sleep(Duration::from_millis(200)).await;
     let output = receiver.stop_and_get_output();
     for expected_string in [
-        "TEST DFLT log info V 1 [lib::dlt_tracing_appender: Test info message]",
-        "TEST DFLT log warn V 1 [lib::dlt_tracing_appender: Test warning message]",
-        "TEST DFLT log error V 1 [lib::dlt_tracing_appender: Test error message]",
+        "TEST DFLT log info V 1 [lib::tracing_dlt: Test info message]",
+        "TEST DFLT log warn V 1 [lib::tracing_dlt: Test warning message]",
+        "TEST DFLT log error V 1 [lib::tracing_dlt: Test error message]",
     ] {
         assert_contains(&output, expected_string);
     }
@@ -122,7 +121,7 @@ async fn test_with_spans_and_context_id() {
     let dlt_output = receiver.stop_and_get_output();
     let outer = r#"outer_span{task="processing"}"#;
     let inner = "inner_span{step=1}";
-    let target = "lib::dlt_tracing_appender";
+    let target = "lib::tracing_dlt";
     for expected_string in [
         format!("TEST CONT log info V 2 [{outer}: {target}: Inside outer with context too long"),
         format!("TEST CTX1 log info V 2 [{outer}:{inner}: {target}: Inside inner span]"),
@@ -164,9 +163,9 @@ async fn test_tracing_with_default_context() {
     let console_output = std::fs::read_to_string(log_file_path).expect("Failed to read log file");
 
     for expected_string in [
-        r#"outer_span{task="processing"}: lib::dlt_tracing_appender: Inside outer span"#,
-        r#"outer_span{task="processing"}:inner_span{step=1}: lib::dlt_tracing_appender: inner"#,
-        r#"outer_span{task="processing"}: lib::dlt_tracing_appender: Back in outer span"#,
+        r#"outer_span{task="processing"}: lib::tracing_dlt: Inside outer span"#,
+        r#"outer_span{task="processing"}:inner_span{step=1}: lib::tracing_dlt: inner"#,
+        r#"outer_span{task="processing"}: lib::tracing_dlt: Back in outer span"#,
     ] {
         assert_contains(&dlt_output, expected_string);
         assert_contains(&console_output, expected_string);
@@ -199,8 +198,8 @@ async fn test_concurrent_logging() {
     for i in 0..5 {
         for j in 0..10 {
             let expected = format!(
-                "TEST DFLT log info V 7 [lib::dlt_tracing_appender: Concurrent log message task = \
-                 {i} iteration = {j}]",
+                "TEST DFLT log info V 7 [lib::tracing_dlt: Concurrent log message task = {i} \
+                 iteration = {j}]",
             );
             assert_contains(&messages, &expected);
         }
@@ -278,12 +277,11 @@ async fn test_mixed_tracing_and_low_level_dlt() {
     // Verify tracing messages (using DFLT or PROC context)
     assert_contains(
         &output,
-        "TEST DFLT log info V 1 [lib::dlt_tracing_appender: Message from tracing API]",
+        "TEST DFLT log info V 1 [lib::tracing_dlt: Message from tracing API]",
     );
     assert_contains(
         &output,
-        "TEST DFLT log warn V 4 [lib::dlt_tracing_appender: Tracing warning with field component \
-         = sensor]",
+        "TEST DFLT log warn V 4 [lib::tracing_dlt: Tracing warning with field component = sensor]",
     );
 
     // Verify low-level DLT messages (using LLVL context)
@@ -296,7 +294,7 @@ async fn test_mixed_tracing_and_low_level_dlt() {
     // Verify messages from within span
     assert_contains(
         &output,
-        "TEST PROC log info V 2 [processing: lib::dlt_tracing_appender: Inside tracing span]",
+        "TEST PROC log info V 2 [processing: lib::tracing_dlt: Inside tracing span]",
     );
     assert_contains(
         &output,
@@ -304,13 +302,12 @@ async fn test_mixed_tracing_and_low_level_dlt() {
     );
     assert_contains(
         &output,
-        "TEST PROC log error V 2 [processing: lib::dlt_tracing_appender: Tracing error in same \
-         span]",
+        "TEST PROC log error V 2 [processing: lib::tracing_dlt: Tracing error in same span]",
     );
 
     // Verify final tracing message
     assert_contains(
         &output,
-        "TEST DFLT log info V 1 [lib::dlt_tracing_appender: Final message from tracing]",
+        "TEST DFLT log info V 1 [lib::tracing_dlt: Final message from tracing]",
     );
 }

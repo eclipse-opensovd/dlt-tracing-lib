@@ -19,10 +19,10 @@ use std::{
     time::Duration,
 };
 
-use ::dlt_sys::{DltId, DltLogLevel};
+use ::dlt_rs::{DltId, DltLogLevel};
 
-mod dlt_sys;
-mod dlt_tracing_appender;
+mod dlt_rs;
+mod tracing_dlt;
 
 static DLT_DAEMON: OnceLock<Arc<Mutex<Option<process::Child>>>> = OnceLock::new();
 

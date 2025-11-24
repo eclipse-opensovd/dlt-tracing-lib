@@ -16,11 +16,12 @@ homepage = "https://github.com/eclipse-opensovd/classic-diagnostic-adapter"
 
 [workspace]
 resolver = "3"
-members = ["dlt-sys", "dlt-tracing-appender", "integration-tests"]
+members = ["dlt-sys", "dlt-rs", "tracing-dlt", "integration-tests"]
 
 [workspace.dependencies]
-dlt-tracing-appender = { path = "dlt-tracing-appender" }
+tracing-dlt = { path = "tracing-dlt" }
 dlt-sys = { path = "dlt-sys" }
+dlt-rs = { path = "dlt-rs" }
 integration-tests = { path = "integration-tests" }
 
 # ---- common crates ----
@@ -37,10 +38,7 @@ serial_test = "3.2.0"
 # ---- tracing & logging crates----
 tracing = "0.1.41"
 tracing-core = "0.1.34"
-crc32fast = "1.5.0"
-tracing-appender = "0.2.3"
 tracing-subscriber = { version = "0.3.20", default-features = false }
-
 
 [workspace.lints.clippy]
 # enable pedantic
