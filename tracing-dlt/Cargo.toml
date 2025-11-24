@@ -10,11 +10,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [package]
-name = "dlt-sys"
+name = "tracing-dlt"
 version = "0.1.0"
 edition.workspace = true
 publish = false
-description = "Wrapper around the C library libdlt to provide DLT logging capabilities for Rust applications"
+description = "DLT log sink for "
 homepage.workspace = true
 license.workspace = true
 
@@ -24,12 +24,22 @@ workspace = true
 [lib]
 path = "src/lib.rs"
 
-[features]
-default = []
-generate-bindings = ["bindgen", "trace_load_ctrl"]
-# This is a feature, which might be necessary in some environments to enable
-trace_load_ctrl = []
+[dependencies]
+# internal dependencies
+dlt-rs = { workspace = true }
 
-[build-dependencies]
-cc = { workspace = true }
-bindgen = { workspace = true, optional = true }
+# external
+tokio = { workspace = true }
+indexmap = { workspace = true }
+
+# logging & tracing
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["registry"] }
+tracing-core = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util", "macros"] }
+
+[features]
+default = ["dlt_layer_internal_logging"]
+dlt_layer_internal_logging = []

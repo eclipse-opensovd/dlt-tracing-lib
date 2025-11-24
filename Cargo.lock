@@ -74,12 +74,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "crc32fast"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9481c1c90cbf2ac953f07c8d4a58aa3945c425b7185c9154d67a65e4230da511"
+name = "dlt-rs"
+version = "0.1.0"
 dependencies = [
- "cfg-if",
+ "dlt-sys",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -88,23 +88,6 @@ version = "0.1.0"
 dependencies = [
  "bindgen",
  "cc",
- "thiserror",
- "tokio",
- "tracing",
- "tracing-core",
-]
-
-[[package]]
-name = "dlt-tracing-appender"
-version = "0.1.0"
-dependencies = [
- "crc32fast",
- "dlt-sys",
- "indexmap",
- "tokio",
- "tracing",
- "tracing-core",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -228,11 +211,11 @@ dependencies = [
 name = "integration-tests"
 version = "0.1.0"
 dependencies = [
- "dlt-sys",
- "dlt-tracing-appender",
+ "dlt-rs",
  "serial_test",
  "tokio",
  "tracing",
+ "tracing-dlt",
  "tracing-subscriber",
 ]
 
@@ -581,6 +564,18 @@ checksum = "b9d12581f227e93f094d3af2ae690a574abb8a2b9b7a96e7cfe9647b2b617678"
 dependencies = [
  "once_cell",
  "valuable",
+]
+
+[[package]]
+name = "tracing-dlt"
+version = "0.1.0"
+dependencies = [
+ "dlt-rs",
+ "indexmap",
+ "tokio",
+ "tracing",
+ "tracing-core",
+ "tracing-subscriber",
 ]
 
 [[package]]

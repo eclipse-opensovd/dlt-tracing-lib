@@ -20,7 +20,8 @@ Get it by running:
 
 This workspace contains three crates:
 - **`dlt-sys`** - Low-level Rust wrapper around the C libdlt library
-- **`dlt-tracing-appender`** - Tracing subscriber/layer that integrates with the tracing framework
+- **`dlt-rs`** - Safe Rust API for DLT logging. This crate depends on `dlt-sys`.
+- **`tracing-appender`** - Tracing subscriber/layer that integrates with the tracing framework. This crate depends on `dlt-rs`.
 - **`integration-tests`** - Common test utilities for integration testing with DLT daemon
 
 ## Features

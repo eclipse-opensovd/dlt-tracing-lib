@@ -20,7 +20,7 @@
 //! # Quick Start
 //!
 //! ```no_run
-//! use dlt_tracing_appender::{DltLayer, DltId};
+//! use tracing_dlt::{DltLayer, DltId};
 //! use tracing::{info, span, Level};
 //! use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 //!
@@ -59,7 +59,6 @@
 //!
 //! - **Per-span contexts** - Use `dlt_context` field to route logs to specific DLT contexts
 //! - **Structured logging** - Span fields automatically included in messages with native types
-//! - **Dynamic control** - Runtime log level changes via `dlt-control` command
 //! - **Layer composition** - Combine with other tracing layers (fmt, file, etc.)
 //! - **Thread-safe** - Full `Send + Sync` support
 //!
@@ -69,7 +68,7 @@
 //! context with the `dlt_context` field (auto-creates and caches contexts):
 //!
 //! ```no_run
-//! # use dlt_tracing_appender::{DltLayer, DltId};
+//! # use tracing_dlt::{DltLayer, DltId};
 //! # use tracing::{info, span, Level};
 //! # use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 //! # #[tokio::main]
@@ -101,9 +100,9 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use dlt_sys::{DltApplication, DltContextHandle, DltLogLevel};
+use dlt_rs::{DltContextHandle};
 // Re-export types for users of this library
-pub use dlt_sys::{DltError, DltId, DltSysError};
+pub use dlt_rs::{DltError, DltId, DltSysError, DltLogLevel, DltApplication};
 use indexmap::IndexMap;
 use tracing_core::{Event, Subscriber, span};
 use tracing_subscriber::{Layer, filter::LevelFilter, layer::Context, registry::LookupSpan};
@@ -225,7 +224,7 @@ impl DltLayer {
             return Err(DltError::InvalidInput);
         }
         let bytes = name.as_bytes();
-        let len = bytes.len().clamp(1, dlt_sys::DLT_ID_SIZE_USIZE);
+        let len = bytes.len().clamp(1, dlt_rs::DLT_ID_SIZE_USIZE);
 
         let get = |i| bytes.get(i).copied().ok_or(DltError::InvalidInput);
 
@@ -469,9 +468,9 @@ fn map_dlt_to_level_filter(dlt_level: DltLogLevel) -> LevelFilter {
 
 /// Helper function to write fields to DLT with proper error propagation
 fn write_fields(
-    log_writer: &mut dlt_sys::DltLogWriter,
+    log_writer: &mut dlt_rs::DltLogWriter,
     fields: IndexMap<String, FieldValue>,
-) -> Result<(), dlt_sys::DltSysError> {
+) -> Result<(), DltSysError> {
     for (field_name, field_value) in fields {
         // Write field name
         log_writer.write_string(&field_name)?;

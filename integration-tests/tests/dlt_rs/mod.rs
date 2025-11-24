@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-use dlt_sys::{DltApplication, DltId, DltLogLevel, LogLevelChangedEvent};
+use dlt_rs::{DltApplication, DltId, DltLogLevel, LogLevelChangedEvent};
 use serial_test::serial;
 use tokio::sync::broadcast;
 
