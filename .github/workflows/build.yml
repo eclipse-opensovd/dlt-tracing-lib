@@ -1,0 +1,95 @@
+# Copyright (c) 2025 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  format_and_clippy_nightly_toolchain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: ./.github/actions/setup-dlt
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly-2025-07-14
+          components: clippy, rustfmt
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Formating - check for long lines
+        run: cargo fmt -- --check --config error_on_unformatted=true,error_on_line_overflow=true,format_strings=true
+      - name: Formatting - check import order
+        run: cargo fmt -- --check --config group_imports=StdExternalCrate
+      - name: Formatting - check imports granularity
+        run: cargo fmt -- --check --config imports_granularity=Crate
+      - name: run clippy nightly
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Install taplo toml toolkit
+        run: cargo install --locked --version 0.10.0 taplo-cli
+
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: ./.github/actions/setup-dlt
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.88.0
+          components: clippy, rustfmt
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Install cargo-deny
+        run: cargo install --locked --version 0.18.3 cargo-deny
+      - name: Build
+        run: cargo build --locked --verbose
+      - name: Check licenses
+        run: cargo deny check licenses
+      - name: Check advisories
+        run: cargo deny check advisories
+      - name: Check allowed sources
+        run: cargo deny check sources
+      - name: Check banned practises
+        run: cargo deny check bans
+      - name: Run tests
+        env:
+          RUSTFLAGS: "-L /usr/local/lib"
+          PKG_CONFIG_PATH: "/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+        run: cargo test --locked --features integration-tests -- --show-output
+
+  check_copyright_headers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check License Headers
+        uses: apache/skywalking-eyes/header@v0.7.0
+        with:
+          config: .licenserc.yaml

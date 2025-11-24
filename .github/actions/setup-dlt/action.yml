@@ -1,0 +1,47 @@
+# Copyright (c) 2025 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Setup DLT
+description: Install system dependencies and build DLT daemon
+runs:
+  using: composite
+  steps:
+    - name: Install system dependencies
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          cmake \
+          build-essential \
+          ca-certificates \
+          curl \
+          zlib1g-dev \
+          llvm-dev \
+          libclang-dev \
+          clang \
+          coreutils
+    - name: Build and install DLT
+      shell: bash
+      run: |
+        git clone https://github.com/COVESA/dlt-daemon.git
+        cd dlt-daemon
+        mkdir build && cd build
+        cmake .. \
+          -DDLT_IPC=UNIX_SOCKET \
+          -DWITH_DLT_CONSOLE=ON \
+          -DWITH_DLT_USE_IPv6=OFF \
+          -DDLT_USER_IPC_PATH="/tmp" \
+          -DDLT_USER=root \
+          -DCMAKE_INSTALL_SYSCONFDIR=/etc
+        make -j$(nproc)
+        sudo make install
+        echo "/usr/local/lib" | sudo tee /etc/ld.so.conf.d/libdlt.conf
+        sudo ldconfig
