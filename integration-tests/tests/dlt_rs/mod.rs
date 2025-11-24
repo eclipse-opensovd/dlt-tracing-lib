@@ -323,3 +323,25 @@ async fn test_clone_application_handle() {
         ],
     );
 }
+
+#[tokio::test]
+#[serial]
+async fn test_f64_write() {
+    ensure_dlt_daemon_running();
+
+    let app_id = DltId::new(b"F64").unwrap();
+    let ctx_id = DltId::new(b"CTX1").unwrap();
+
+    let receiver = DltReceiver::start();
+
+    let app = DltApplication::register(&app_id, "f64 write test").unwrap();
+    let ctx1 = app.create_context(&ctx_id, "Context 1").unwrap();
+    let mut log_writer = ctx1
+        .log_write_start(DltLogLevel::Info)
+        .expect("Failed to start log");
+    log_writer.write_float64(42.42_f64).unwrap();
+    log_writer.finish().unwrap();
+
+    let output = receiver.stop_and_get_output();
+    assert_contains_all(&output, &["F64- CTX1 log info V 1 [42.42]"]);
+}

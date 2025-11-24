@@ -21,8 +21,8 @@
 mod dlt_bindings;
 
 use std::ptr;
-pub use dlt_bindings::*;
 
+pub use dlt_bindings::*;
 
 impl Default for DltContextData {
     fn default() -> Self {

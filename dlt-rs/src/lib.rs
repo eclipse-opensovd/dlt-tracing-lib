@@ -197,18 +197,15 @@ impl DltSysError {
     fn from_return_code(code: i32) -> Result<(), Self> {
         #[allow(unreachable_patterns)]
         match code {
-            dlt_sys::DltReturnValue_DLT_RETURN_TRUE
-            | dlt_sys::DltReturnValue_DLT_RETURN_OK => Ok(()),
+            dlt_sys::DltReturnValue_DLT_RETURN_TRUE | dlt_sys::DltReturnValue_DLT_RETURN_OK => {
+                Ok(())
+            }
             dlt_sys::DltReturnValue_DLT_RETURN_ERROR => Err(DltSysError::Error),
             dlt_sys::DltReturnValue_DLT_RETURN_PIPE_ERROR => Err(DltSysError::PipeError),
             dlt_sys::DltReturnValue_DLT_RETURN_PIPE_FULL => Err(DltSysError::PipeFull),
             dlt_sys::DltReturnValue_DLT_RETURN_BUFFER_FULL => Err(DltSysError::BufferFull),
-            dlt_sys::DltReturnValue_DLT_RETURN_WRONG_PARAMETER => {
-                Err(DltSysError::WrongParameter)
-            }
-            dlt_sys::DltReturnValue_DLT_RETURN_USER_BUFFER_FULL => {
-                Err(DltSysError::UserBufferFull)
-            }
+            dlt_sys::DltReturnValue_DLT_RETURN_WRONG_PARAMETER => Err(DltSysError::WrongParameter),
+            dlt_sys::DltReturnValue_DLT_RETURN_USER_BUFFER_FULL => Err(DltSysError::UserBufferFull),
             dlt_sys::DltReturnValue_DLT_RETURN_LOGGING_DISABLED => {
                 Err(DltSysError::LoggingDisabled)
             }
@@ -270,7 +267,7 @@ impl DltId {
         }
 
         let mut padded = [0u8; DLT_ID_SIZE_USIZE];
-        // Indexing is safe here: loop condition ensures i < N, and N <= DLT_ID_SIZE by validation
+        // Indexing is safe here: function ensures N <= DLT_ID_SIZE by validation
         #[allow(clippy::indexing_slicing)]
         padded[..N].copy_from_slice(&bytes[..N]);
 
@@ -646,11 +643,8 @@ impl DltContextHandle {
         let mut log_data = DltContextData::default();
 
         unsafe {
-            let ret = dlt_sys::dltUserLogWriteStart(
-                self.context,
-                &raw mut log_data,
-                log_level.into(),
-            );
+            let ret =
+                dlt_sys::dltUserLogWriteStart(self.context, &raw mut log_data, log_level.into());
 
             DltSysError::from_return_code(ret)?;
             Ok(DltLogWriter { log_data })
