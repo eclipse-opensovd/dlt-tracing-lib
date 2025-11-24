@@ -1,0 +1,33 @@
+# Copyright (c) 2025 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "integration-tests"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+description = "Common test utilities for DLT tracing integration tests"
+homepage.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+dlt-sys = { workspace = true }
+dlt-tracing-appender = { workspace = true }
+tokio = { workspace = true, features = ["test-util", "macros", "rt"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["registry", "fmt"] }
+serial_test = { workspace = true }
+
+[features]
+integration-tests = []
