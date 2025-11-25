@@ -294,6 +294,26 @@ impl DltId {
     }
 }
 
+impl TryFrom<&str> for DltId {
+    type Error = DltError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let bytes = value.as_bytes();
+        if bytes.is_empty() || bytes.len() > DLT_ID_SIZE_USIZE {
+            return Err(DltError::InvalidInput);
+        }
+        let mut padded = [0u8; DLT_ID_SIZE_USIZE];
+        padded
+            .get_mut(..bytes.len())
+            .ok_or(DltError::InvalidInput)?
+            .copy_from_slice(bytes);
+        Ok(DltId {
+            bytes: padded,
+            len: bytes.len(),
+        })
+    }
+}
+
 /// DLT trace status
 ///
 /// Controls whether network trace messages (like packet captures) are enabled.
@@ -959,5 +979,17 @@ mod tests {
         // Different lengths are not equal
         let id4 = DltId::new(b"A").unwrap();
         assert_ne!(id1, id4);
+    }
+
+    #[test]
+    fn test_dlt_id_try_from_str() {
+        let id = DltId::try_from("APP").unwrap();
+        assert_eq!(id.as_str().unwrap(), "APP");
+
+        let long_id_result = DltId::try_from("TOOLONG");
+        assert_eq!(long_id_result.unwrap_err(), DltError::InvalidInput);
+
+        let empty_id_result = DltId::try_from("");
+        assert_eq!(empty_id_result.unwrap_err(), DltError::InvalidInput);
     }
 }
