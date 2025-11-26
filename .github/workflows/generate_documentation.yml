@@ -23,6 +23,8 @@ on:
 permissions:
   contents: write
   actions: write
+  pages: write
+  id-token: write
 
 jobs:
   build_documentation:
@@ -42,7 +44,12 @@ jobs:
       - name: Build documentation
         run: cargo doc --no-deps --all-features
       - name: Add index redirect
-        run: echo '<meta http-equiv="refresh" content="0; url=dlt_tracing_appender">' > target/doc/index.html
+        run: echo '<meta http-equiv="refresh" content="0; url=tracing_dlt">' > target/doc/index.html
+      - name: Upload artifact for GitHub Pages
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
       - name: Create docs archive
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -53,3 +60,15 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: rustdoc.tar.gz
+
+  deploy_pages:
+    if: github.ref == 'refs/heads/main'
+    needs: build_documentation
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
