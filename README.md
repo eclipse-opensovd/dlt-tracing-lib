@@ -18,70 +18,30 @@ Get it by running:
 
 ## Overview
 
-This workspace contains three crates:
-- **`dlt-sys`** - Low-level Rust wrapper around the C libdlt library
-- **`dlt-rs`** - Safe Rust API for DLT logging. This crate depends on `dlt-sys`.
-- **`tracing-appender`** - Tracing subscriber/layer that integrates with the tracing framework. This crate depends on `dlt-rs`.
-- **`integration-tests`** - Common test utilities for integration testing with DLT daemon
+This workspace contains three publishable crates:
 
-## Features
+| Crate | Description | Documentation |
+|-------|-------------|---------------|
+| **[`dlt-sys`](dlt-sys/)** | Low-level FFI bindings to libdlt | [README](dlt-sys/README.md) |
+| **[`dlt-rs`](dlt-rs/)** | Safe and idiomatic Rust API for DLT logging | [README](dlt-rs/README.md) |
+| **[`tracing-dlt`](tracing-dlt/)** | Tracing subscriber/layer for DLT integration | [README](tracing-dlt/README.md) |
 
-- ✅ **Type-safe Rust API** for DLT logging
-- ✅ **Tracing integration** - Use standard `tracing` macros with DLT
-- ✅ **Structured logging** - Field types preserved when sent to DLT
-- ✅ **Span context** - Nested spans appear in log messages
-- ✅ **Dynamic log levels** - Responds to DLT daemon log level changes
-- ✅ **Thread-safe** - Safe for concurrent use across async tasks
-- ✅ **Zero-copy** where possible for performance
+**Which crate should you use?**
+- Use `tracing-dlt` for integration with the `tracing` ecosystem (recommended)
+- Use `dlt-rs` for direct DLT logging with a safe API (non-tracing applications)
+- Use `dlt-sys` only if building your own low-level abstraction (not recommended for most users)
+
+See each crate's README for detailed examples and API documentation.
+
+> **Note:** `tracing-dlt` and `dlt-rs` can be used together when application registration is done through `tracing-dlt`.
 
 ## Quick Start
 
 ### Prerequisites
 
 - Rust 1.88.0 or later
+- **libdlt** must be installed on your system
 
-### Basic Usage
-
-#### DLT Sys
-```rust
-use dlt_sys::{DltApplication, DltId, DltLogLevel};
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Register application (one per process)
-    let app = DltApplication::register(&DltId::new(b"MBTI")?, "Measurement & Bus Trace Interface")?;
-    let ctx = app.create_context(&DltId::new(b"MEAS")?, "Measurement Context")?;
-
-    // Simple logging
-    ctx.log(DltLogLevel::Info, "Hello DLT!")?;
-
-    // Structured logging with typed fields
-    let mut writer = ctx.log_write_start(DltLogLevel::Info)?;
-    writer.write_string("Temperature:")?
-        .write_float32(87.5)?
-        .write_string("°C")?;
-    writer.finish()?;
-    Ok(())
-}
-```
-
-#### Dlt Tracing Appender
-
-```rust
-use dlt_tracing_appender::{DltLayer, DltId};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let dlt_layer = DltLayer::new(&DltId::new(b"MBTI"), "My Beautiful Trace Ingestor")?;
-
-    tracing_subscriber::registry().with(dlt_layer).init();
-
-    tracing::info!("Application started");
-    Ok(())
-}
-```
-
-For more examples and detailed usage, see the API documentation.
-The tracing and dlt-sys crates can be used simultaneously, when the application registration is done through the dlt-tracing-appender crate.
 
 ## Development
 
