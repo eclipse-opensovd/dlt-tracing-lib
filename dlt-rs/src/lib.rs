@@ -257,9 +257,10 @@ impl DltId {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new<const N: usize>(bytes: &[u8; N]) -> Result<Self, DltError> {
+    pub fn new(bytes: &[u8]) -> Result<Self, DltError> {
         // Validate that N is between 1 and 4
-        if N == 0 || N > DLT_ID_SIZE_USIZE {
+        let len = bytes.len();
+        if bytes.is_empty() || len > DLT_ID_SIZE_USIZE {
             return Err(DltError::InvalidInput);
         }
 
@@ -271,12 +272,31 @@ impl DltId {
         let mut padded = [0u8; DLT_ID_SIZE_USIZE];
         // Indexing is safe here: function ensures N <= DLT_ID_SIZE by validation
         #[allow(clippy::indexing_slicing)]
-        padded[..N].copy_from_slice(&bytes[..N]);
+        padded[..len].copy_from_slice(&bytes[..len]);
 
-        Ok(Self {
-            bytes: padded,
-            len: N,
-        })
+        Ok(Self { bytes: padded, len })
+    }
+
+    /// Construct a `DltId` from a string slice, clamping to 4 bytes
+    /// # Errors
+    /// Returns an error if the string is empty
+    /// # Example
+    /// ```no_run
+    /// # use dlt_rs::{DltId, DltError};
+    /// # fn main() -> Result<(), DltError> {
+    /// let id = DltId::from_str_clamped("APPTOOLONG")?;
+    /// assert_eq!(id.as_str()?, "APPT");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn from_str_clamped(id: &str) -> Result<Self, DltError> {
+        if id.is_empty() {
+            return Err(DltError::InvalidInput);
+        }
+        let bytes = id.as_bytes();
+        let len = bytes.len().clamp(1, DLT_ID_SIZE_USIZE);
+
+        DltId::new(bytes.get(0..len).ok_or(DltError::InvalidInput)?)
     }
 
     /// Get the ID as a string slice
@@ -294,6 +314,7 @@ impl DltId {
     }
 }
 
+/// Convert a string slice to a DLT ID, will yield an error if the string is too long or empty
 impl TryFrom<&str> for DltId {
     type Error = DltError;
 

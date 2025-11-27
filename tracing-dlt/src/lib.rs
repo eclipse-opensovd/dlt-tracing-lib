@@ -205,7 +205,7 @@ impl DltLayer {
         }
 
         // Create new context with custom ID
-        let ctx_id = Self::span_name_to_dlt_id(&custom_id)?;
+        let ctx_id = DltId::from_str_clamped(&custom_id)?;
         let context = Arc::new(self.app.create_context(&ctx_id, span_name)?);
 
         let mut cache = self.context_cache.write().map_err(|_| DltError::BadLock)?;
@@ -213,27 +213,6 @@ impl DltLayer {
         Self::register_context_level_changed(&context)?;
 
         Ok(context)
-    }
-
-    /// Convert a span name to a valid DLT context ID
-    ///
-    /// Takes the first 1-4 bytes of the span name, uppercase.
-    /// If the name is longer, it's truncated. If shorter, it's used as-is.
-    fn span_name_to_dlt_id(name: &str) -> Result<DltId, DltError> {
-        if name.is_empty() {
-            return Err(DltError::InvalidInput);
-        }
-        let bytes = name.as_bytes();
-        let len = bytes.len().clamp(1, dlt_rs::DLT_ID_SIZE_USIZE);
-
-        let get = |i| bytes.get(i).copied().ok_or(DltError::InvalidInput);
-
-        match len {
-            1 => DltId::new(&[get(0)?]),
-            2 => DltId::new(&[get(0)?, get(1)?]),
-            3 => DltId::new(&[get(0)?, get(1)?, get(2)?]),
-            _ => DltId::new(&[get(0)?, get(1)?, get(2)?, get(3)?]),
-        }
     }
 
     #[cfg(feature = "dlt_layer_internal_logging")]
