@@ -1,13 +1,5 @@
 build
 /target
 
-*.pcap*
 .idea
 .vscode/settings.json
-
-# Docker environment settings
-.env
-
-# Allow generated documentation
-!docs/
-!docs/**
