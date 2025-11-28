@@ -5,16 +5,10 @@ This project provides Rust bindings for DLT and a tracing subscriber that allows
 
 ## 📖 Documentation
 
-[DLT Sys documentation](https://htmlpreview.github.io/?https://github.com/eclipse-opensovd/dlt-tracing-lib/blob/main/docs/dlt_sys/index.html)
+* [tracing-dlt](https://eclipse-opensovd.github.io/dlt-tracing-lib/tracing_dlt/index.html)
+* [dlt_rs](https://eclipse-opensovd.github.io/dlt-tracing-lib/dlt_rs/index.html)
+* [dlr_sys](https://eclipse-opensovd.github.io/dlt-tracing-lib/dlt_sys/index.html)
 
-[DLT Trace Appender documentation](https://htmlpreview.github.io/?https://github.com/eclipse-opensovd/dlt-tracing-lib/blob/main/docs/dlt_tracing_appender/index.html)
-
-
-The documentation includes detailed examples, usage patterns, and API reference for all crates.
-Get it by running:
-```bash
- cargo doc --no-deps --all-features
-```
 
 ## Overview
 
