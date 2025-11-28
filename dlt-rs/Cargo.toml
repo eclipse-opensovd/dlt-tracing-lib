@@ -25,7 +25,7 @@ workspace = true
 path = "src/lib.rs"
 
 [dependencies]
-dlt-sys = { workspace = true }
+dlt-sys = { workspace = true, version = "0.1.0" }
 
 # external
 tokio = { workspace = true }

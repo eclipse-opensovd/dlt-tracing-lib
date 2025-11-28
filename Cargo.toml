@@ -20,8 +20,8 @@ members = ["dlt-sys", "dlt-rs", "tracing-dlt", "integration-tests"]
 
 [workspace.dependencies]
 tracing-dlt = { path = "tracing-dlt" }
-dlt-sys = { path = "dlt-sys" }
-dlt-rs = { path = "dlt-rs" }
+dlt-sys = { path = "dlt-sys", version = "0.1.0" }
+dlt-rs = { path = "dlt-rs", version = "0.1.0" }
 integration-tests = { path = "integration-tests" }
 
 # ---- common crates ----
