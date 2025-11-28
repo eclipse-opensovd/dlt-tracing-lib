@@ -48,6 +48,8 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
       - name: Install taplo toml toolkit
         run: cargo install --locked --version 0.10.0 taplo-cli
+      - name: Run taplo check
+        run: taplo fmt --check --diff
 
   build_and_test:
     runs-on: ubuntu-latest
