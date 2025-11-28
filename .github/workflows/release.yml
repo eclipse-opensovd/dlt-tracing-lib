@@ -1,0 +1,56 @@
+# Copyright (c) 2025 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+concurrency:
+  group: "release-${{ github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  cargo-publish:
+    permissions:
+      content: read
+    name: publish to crates.io
+    # This will publish to crates.io if secrets.CRATES_TOKEN is set in the workspace, otherwise do a dry-run
+    runs-on: ubuntu-latest
+    needs:
+      - tag_release_artifacts
+    env:
+      CRATES_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain
+        with:
+          toolchain: 1.88.0
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+      - uses: ./.github/actions/setup-dlt
+      - name: Publish to crates.io
+        run: |
+          PUBLISH_ARGS="--all-features"
+          if [ -z "$CRATES_TOKEN" ]; then
+            PUBLISH_ARGS="$PUBLISH_ARGS --dry-run"
+          else
+            PUBLISH_ARGS="$PUBLISH_ARGS --token ${CRATES_TOKEN}"
+          fi
+          cargo publish $PUBLISH_ARGS
+        env:
+          RUSTFLAGS: "-L /usr/local/lib"
+          PKG_CONFIG_PATH: "/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
