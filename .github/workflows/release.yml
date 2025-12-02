@@ -44,13 +44,27 @@ jobs:
       - uses: ./.github/actions/setup-dlt
       - name: Publish to crates.io
         run: |
+          # Determine publish arguments based on CRATES_API_TOKEN
           PUBLISH_ARGS="--all-features"
-          if [ -z "$CRATES_TOKEN" ]; then
-            PUBLISH_ARGS="$PUBLISH_ARGS --dry-run"
+          if [ -z "$CRATES_API_TOKEN" ]; then
+            PUBLISH_ARGS="$CRATES_API_TOKEN --dry-run"
+            echo "CRATES_API_TOKEN is not set. Performing a dry-run publish for all crates."
           else
-            PUBLISH_ARGS="$PUBLISH_ARGS --token ${CRATES_TOKEN}"
+            PUBLISH_ARGS="$PUBLISH_ARGS --token ${CRATES_API_TOKEN}"
+            echo "CRATES_API_TOKEN is set. Performing a real publish for all crates."
           fi
-          cargo publish $PUBLISH_ARGS
+
+          echo "Attempting to publish dlt-sys..."
+          (cd dlt-sys && cargo publish $PUBLISH_ARGS)
+          echo "dlt-sys publish command executed."
+
+          echo "Attempting to publish dlt-rs..."
+          (cd dlt-rs && cargo publish $PUBLISH_ARGS)
+          echo "dlt-rs publish command executed."
+
+          echo "Attempting to publish tracing-dlt..."
+          (cd tracing-dlt && cargo publish $PUBLISH_ARGS)
+          echo "tracing-dlt publish command executed."
         env:
           RUSTFLAGS: "-L /usr/local/lib"
           PKG_CONFIG_PATH: "/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
