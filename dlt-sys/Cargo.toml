@@ -11,7 +11,7 @@
 
 [package]
 name = "dlt-sys"
-version = "0.1.0"
+version = "0.1.1"
 edition.workspace = true
 publish = true
 description = "FFI bindings to libdlt"
