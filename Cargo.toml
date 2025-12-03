@@ -19,9 +19,9 @@ resolver = "3"
 members = ["dlt-sys", "dlt-rs", "tracing-dlt", "integration-tests"]
 
 [workspace.dependencies]
-tracing-dlt = { path = "tracing-dlt" }
-dlt-sys = { path = "dlt-sys", version = "0.1.0" }
-dlt-rs = { path = "dlt-rs", version = "0.1.0" }
+tracing-dlt = { path = "tracing-dlt", version = "0.1.1" }
+dlt-sys = { path = "dlt-sys", version = "0.1.1" }
+dlt-rs = { path = "dlt-rs", version = "0.1.1" }
 integration-tests = { path = "integration-tests" }
 
 # ---- common crates ----
