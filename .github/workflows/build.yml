@@ -63,7 +63,7 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
       - name: Install cargo-deny
-        run: cargo install --locked --version 0.18.3 cargo-deny
+        run: cargo install --locked --version 0.18.9 cargo-deny
       - name: Build
         run: cargo build --locked --verbose
       - name: Check licenses
