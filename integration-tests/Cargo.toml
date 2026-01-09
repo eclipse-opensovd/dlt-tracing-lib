@@ -11,7 +11,7 @@
 
 [package]
 name = "integration-tests"
-version = "0.1.1"
+version = "0.1.2"
 edition.workspace = true
 publish = false
 description = "Common test utilities for DLT tracing integration tests"
