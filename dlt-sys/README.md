@@ -16,8 +16,14 @@ Please note that this is only implements functionality required for dlt-rs and d
 - Optional `trace_load_ctrl` feature for load control support
 
 ## Prerequisites
-- **libdlt** and its development headers must be installed on your system.
-  On Debian-based systems, this can be installed with: `apt install libdlt-dev`
+- **libdlt** and its development headers must be installed on your system. \
+  You can install it like so:
+  * On Debian-based systems: `apt install libdlt-dev`
+  * On macOS with Homebrew:
+    ```shell
+    brew tap COVESA/dlt-daemon https://github.com/COVESA/dlt-daemon
+    brew install COVESA/dlt-daemon/dlt-daemon
+    ```
 - **bindgen prerequisites** must be available at build time (`clang` and `libclang`).
   `dlt-sys` generates Rust bindings on the fly during `cargo build`, using the installed DLT headers.
 
