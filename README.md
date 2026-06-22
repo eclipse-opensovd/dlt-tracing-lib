@@ -63,6 +63,18 @@ cargo test
 cargo test -p integration-tests --features integration-tests
 ```
 
+
+## Developing
+
+### Pre-commit Hook
+
+```shell
+uv tool run pre-commit@4.2 run
+```
+
+Install this command as documented here: <https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks>
+
+
 ### Development Container
 
 A devcontainer is provided with DLT daemon pre-installed. Open the project in VS Code with the Dev Containers extension.
