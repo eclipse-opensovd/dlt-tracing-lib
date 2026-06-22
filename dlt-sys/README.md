@@ -16,7 +16,8 @@ Please note that this is only implements functionality required for dlt-rs and d
 - Optional `trace_load_ctrl` feature for load control support
 
 ## Prerequisites
-- **libdlt** and its development headers must be installed on your system.
+- **libdlt** and its development headers must be installed on your system.  
+  On Debian-based systems, this can be installed with: `apt install libdlt-dev`
 
 ## Usage
 This is a low-level crate with unsafe APIs. Most users should use [`dlt-rs`](https://crates.io/crates/dlt-rs) instead for a safe, idiomatic Rust API.
