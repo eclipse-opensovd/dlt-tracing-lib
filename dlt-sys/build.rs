@@ -14,7 +14,10 @@
 const DLT_WRAPPER: &str = "dlt-wrapper";
 const DLT_HEADER: &str = "dlt-wrapper.h";
 const DLT_SRC: &str = "dlt-wrapper.c";
-#[cfg(feature = "generate-bindings")]
+const DLT_INCLUDE_DIR: &str = "DLT_INCLUDE_DIR";
+const DLT_USER_INCLUDE_DIR: &str = "DLT_USER_INCLUDE_DIR";
+const DLT_LIB_DIR: &str = "DLT_LIB_DIR";
+const DLT_LIB_NAME: &str = "DLT_LIB_NAME";
 const COPYRIGHT_HEADER: &str = r"/*
  * Copyright (c) 2025 The Contributors to Eclipse OpenSOVD (see CONTRIBUTORS)
  *
@@ -30,12 +33,29 @@ const COPYRIGHT_HEADER: &str = r"/*
 
 ";
 
-// necessary to ensure that bindings are generated with trace_load_ctrl enabled
-// otherwise we cannot enable the feature with the generated bindings as some types will be missing
-#[cfg(all(feature = "generate-bindings", not(feature = "trace_load_ctrl")))]
-compile_error!("Feature 'generate-bindings' requires 'trace_load_ctrl' to be enabled");
+fn env_non_empty(var: &str) -> Option<String> {
+    std::env::var(var)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
+fn add_include_dir(build: &mut cc::Build, include: &str) {
+    build.include(include).include(format!("{include}/dlt"));
+}
+
+fn add_bindgen_include(builder: bindgen::Builder, include: &str) -> bindgen::Builder {
+    builder
+        .clang_arg(format!("-I{include}"))
+        .clang_arg(format!("-I{include}/dlt"))
+}
 
 fn main() {
+    println!("cargo:rerun-if-env-changed={DLT_INCLUDE_DIR}");
+    println!("cargo:rerun-if-env-changed={DLT_USER_INCLUDE_DIR}");
+    println!("cargo:rerun-if-env-changed={DLT_LIB_DIR}");
+    println!("cargo:rerun-if-env-changed={DLT_LIB_NAME}");
+
     let project_dir = std::env::var("CARGO_MANIFEST_DIR")
         .expect("CARGO_MANIFEST_DIR environment variable not set");
 
@@ -44,14 +64,12 @@ fn main() {
     let mut build = cc::Build::new();
     build.cpp(false).file(format!("{wrapper_dir}/{DLT_SRC}"));
 
-    // Add system DLT include paths
-    if let Ok(include) = std::env::var("DLT_INCLUDE_DIR") {
-        build.include(&include).include(format!("{include}/dlt"));
+    // Explicit include path overrides for unusual installations.
+    if let Some(include) = env_non_empty(DLT_INCLUDE_DIR) {
+        add_include_dir(&mut build, &include);
     }
-    if let Ok(user_include) = std::env::var("DLT_USER_INCLUDE_DIR") {
-        build
-            .include(&user_include)
-            .include(format!("{user_include}/dlt"));
+    if let Some(user_include) = env_non_empty(DLT_USER_INCLUDE_DIR) {
+        add_include_dir(&mut build, &user_include);
     }
 
     // Pass trace_load_ctrl feature to C code
@@ -61,36 +79,41 @@ fn main() {
 
     build.compile(DLT_WRAPPER);
 
-    if let Ok(lib_path) = std::env::var("DLT_LIB_DIR") {
+    if let Some(lib_path) = env_non_empty(DLT_LIB_DIR) {
         println!("cargo:rustc-link-search=native={lib_path}");
     }
-    println!("cargo:rustc-link-lib=dylib=dlt");
+    let lib_name = env_non_empty(DLT_LIB_NAME).unwrap_or_else(|| "dlt".to_string());
+    println!("cargo:rustc-link-lib=dylib={lib_name}");
+    if let Ok(target_os) = std::env::var("CARGO_CFG_TARGET_OS") {
+        if target_os == "linux" || target_os == "android" {
+            println!("cargo:rustc-link-lib=dylib=dl");
+        }
+    }
 
     println!("cargo:rerun-if-changed={wrapper_dir}/{DLT_HEADER}");
     println!("cargo:rerun-if-changed={wrapper_dir}/{DLT_SRC}");
 
-    #[cfg(feature = "generate-bindings")]
-    generate_bindings(&project_dir, &wrapper_dir);
+    generate_bindings(&wrapper_dir);
 }
 
-#[cfg(feature = "generate-bindings")]
-fn generate_bindings(project_dir: &str, wrapper_dir: &str) {
+fn generate_bindings(wrapper_dir: &str) {
     let mut builder = bindgen::Builder::default()
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .header(format!("{}/{}", wrapper_dir, DLT_HEADER));
 
-    // Add clang args for system DLT headers
-    if let Ok(include) = std::env::var("DLT_INCLUDE_DIR") {
-        builder = builder.clang_arg(format!("-I{}", include));
+    // Add clang args for explicit header locations.
+    if let Some(include) = env_non_empty(DLT_INCLUDE_DIR) {
+        builder = add_bindgen_include(builder, &include);
     }
-    if let Ok(user_include) = std::env::var("DLT_USER_INCLUDE_DIR") {
-        builder = builder.clang_arg(format!("-I{}", user_include));
+    if let Some(user_include) = env_non_empty(DLT_USER_INCLUDE_DIR) {
+        builder = add_bindgen_include(builder, &user_include);
     }
     if cfg!(feature = "trace_load_ctrl") {
         builder = builder.clang_arg("-DDLT_TRACE_LOAD_CTRL_ENABLE");
     }
 
-    let target_file = std::path::PathBuf::from(project_dir).join("src/dlt_bindings.rs");
+    let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR is not set by Cargo");
+    let target_file = std::path::PathBuf::from(out_dir).join("dlt_bindings.rs");
 
     builder
         // Types
@@ -111,14 +134,22 @@ fn generate_bindings(project_dir: &str, wrapper_dir: &str) {
         // Context management functions
         .allowlist_function("registerContext")
         .allowlist_function("unregisterContext")
+        .allowlist_function("createContext")
+        .allowlist_function("freeContext")
+        .allowlist_function("getContextId")
+        .allowlist_function("getContextLogLevel")
+        .allowlist_function("getContextTraceStatus")
         // Simple logging functions
         .allowlist_function("logDlt")
         .allowlist_function("logDltString")
         .allowlist_function("logDltUint")
         .allowlist_function("logDltInt")
         // Complex log write API
+        .allowlist_function("createContextData")
+        .allowlist_function("freeContextData")
         .allowlist_function("dltUserLogWriteStart")
         .allowlist_function("dltUserLogWriteFinish")
+        .allowlist_function("setContextDataUserTimestamp")
         .allowlist_function("dltUserLogWriteString")
         .allowlist_function("dltUserLogWriteUint")
         .allowlist_function("dltUserLogWriteInt")
@@ -134,10 +165,10 @@ fn generate_bindings(project_dir: &str, wrapper_dir: &str) {
         .write_to_file(&target_file)
         .unwrap_or_else(|err| panic!("Error writing bindings: {}", err));
 
-    prepend_copyright(target_file.to_str().unwrap()).unwrap();
+    prepend_copyright(target_file.to_str().expect("Invalid generated bindings path"))
+        .expect("Error prepending copyright header");
 }
 
-#[cfg(feature = "generate-bindings")]
 fn prepend_copyright(file_path: &str) -> std::io::Result<()> {
     let content = std::fs::read_to_string(file_path)?;
     let new_content = format!("{COPYRIGHT_HEADER}{content}");

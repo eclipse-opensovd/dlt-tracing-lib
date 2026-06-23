@@ -11,6 +11,15 @@
 
 name: Setup DLT
 description: Install system dependencies and build DLT daemon
+inputs:
+  dlt-repository:
+    description: DLT daemon repository URL
+    required: false
+    default: https://github.com/COVESA/dlt-daemon.git
+  dlt-ref:
+    description: Git branch/tag/commit of DLT daemon to build
+    required: false
+    default: e858f33ff77941f07bd6613c6ff3afaf59a5a9a4
 runs:
   using: composite
   steps:
@@ -31,8 +40,9 @@ runs:
     - name: Build and install DLT
       shell: bash
       run: |
-        git clone https://github.com/COVESA/dlt-daemon.git
+        git clone "${{ inputs.dlt-repository }}" dlt-daemon
         cd dlt-daemon
+        git checkout "${{ inputs.dlt-ref }}"
         mkdir build && cd build
         cmake .. \
           -DDLT_IPC=UNIX_SOCKET \

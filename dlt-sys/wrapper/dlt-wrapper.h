@@ -28,8 +28,13 @@ DltReturnValue unregisterApplicationFlushBufferedLogs(void);
 DltReturnValue dltFree(void);
 
 // Context management
+DltContext *createContext(void);
+void freeContext(DltContext *context);
 DltReturnValue registerContext(const char *contextId, const char *contextDescription, DltContext* context);
 DltReturnValue unregisterContext(DltContext *context);
+DltReturnValue getContextId(DltContext *context, char context_id[DLT_ID_SIZE]);
+DltReturnValue getContextLogLevel(DltContext *context, int32_t *log_level);
+DltReturnValue getContextTraceStatus(DltContext *context, int32_t *trace_status);
 
 // Logging functions
 DltReturnValue logDlt(DltContext *context, DltLogLevelType logLevel, const char *message);
@@ -38,8 +43,11 @@ DltReturnValue logDltUint(DltContext *context, DltLogLevelType logLevel, uint32_
 DltReturnValue logDltInt(DltContext *context, DltLogLevelType logLevel, int32_t value);
 
 // Log write API (for structured logging)
+DltContextData *createContextData(void);
+void freeContextData(DltContextData *log);
 DltReturnValue dltUserLogWriteStart(DltContext *context, DltContextData *log, DltLogLevelType logLevel);
 DltReturnValue dltUserLogWriteFinish(DltContextData *log);
+DltReturnValue setContextDataUserTimestamp(DltContextData *log, uint32_t timestamp);
 DltReturnValue dltUserLogWriteString(DltContextData *log, const char *text);
 DltReturnValue dltUserLogWriteUint(DltContextData *log, uint32_t data);
 DltReturnValue dltUserLogWriteInt(DltContextData *log, int32_t data);

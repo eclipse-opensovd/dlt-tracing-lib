@@ -14,6 +14,7 @@
 // Requires system DLT headers - set DLT_INCLUDE_DIR environment variable or modify include paths accordingly.
 #include "dlt-wrapper.h"
 #include <dlt/dlt_user.h>
+#include <dlfcn.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,11 +26,38 @@ DltReturnValue registerApplication(const char *appId, const char *appDescription
 }
 
 DltReturnValue unregisterApplicationFlushBufferedLogs(void) {
-    return dlt_unregister_app_flush_buffered_logs();
+    typedef DltReturnValue (*dlt_unregister_app_flush_buffered_logs_fn)(void);
+    static dlt_unregister_app_flush_buffered_logs_fn flush_fn = NULL;
+    static int flush_fn_initialized = 0;
+
+    if (!flush_fn_initialized) {
+        flush_fn = (dlt_unregister_app_flush_buffered_logs_fn)dlsym(
+            RTLD_DEFAULT,
+            "dlt_unregister_app_flush_buffered_logs"
+        );
+        flush_fn_initialized = 1;
+    }
+
+    if (flush_fn != NULL) {
+        return flush_fn();
+    }
+
+    // Fallback for older libdlt releases without buffered-flush API.
+    return dlt_unregister_app();
 }
 
 DltReturnValue dltFree(void) {
     return dlt_free();
+}
+
+DltContext *createContext(void) {
+    return (DltContext *)calloc(1, sizeof(DltContext));
+}
+
+void freeContext(DltContext *context) {
+    if (context != NULL) {
+        free(context);
+    }
 }
 
 DltReturnValue registerContext(const char *contextId, const char *contextDescription, DltContext* context) {
@@ -46,6 +74,43 @@ DltReturnValue unregisterContext(DltContext *context) {
     }
 
     return dlt_unregister_context(context);
+}
+
+DltReturnValue getContextId(DltContext *context, char context_id[DLT_ID_SIZE]) {
+    if (context == NULL || context_id == NULL) {
+        return DLT_RETURN_WRONG_PARAMETER;
+    }
+
+    memcpy(context_id, context->contextID, DLT_ID_SIZE);
+    return DLT_RETURN_OK;
+}
+
+DltReturnValue getContextLogLevel(DltContext *context, int32_t *log_level) {
+    if (context == NULL || log_level == NULL) {
+        return DLT_RETURN_WRONG_PARAMETER;
+    }
+
+    if (context->log_level_ptr == NULL) {
+        *log_level = DLT_LOG_DEFAULT;
+        return DLT_RETURN_OK;
+    }
+
+    *log_level = (int32_t)(*context->log_level_ptr);
+    return DLT_RETURN_OK;
+}
+
+DltReturnValue getContextTraceStatus(DltContext *context, int32_t *trace_status) {
+    if (context == NULL || trace_status == NULL) {
+        return DLT_RETURN_WRONG_PARAMETER;
+    }
+
+    if (context->trace_status_ptr == NULL) {
+        *trace_status = DLT_TRACE_STATUS_DEFAULT;
+        return DLT_RETURN_OK;
+    }
+
+    *trace_status = (int32_t)(*context->trace_status_ptr);
+    return DLT_RETURN_OK;
 }
 
 DltReturnValue logDlt(DltContext *context, DltLogLevelType logLevel, const char *message) {
@@ -79,6 +144,16 @@ DltReturnValue logDltInt(DltContext *context, DltLogLevelType logLevel, int32_t 
     return DLT_RETURN_OK;
 }
 
+DltContextData *createContextData(void) {
+    return (DltContextData *)calloc(1, sizeof(DltContextData));
+}
+
+void freeContextData(DltContextData *log) {
+    if (log != NULL) {
+        free(log);
+    }
+}
+
 DltReturnValue dltUserLogWriteStart(DltContext *context, DltContextData *log, DltLogLevelType logLevel) {
     if (context == NULL || log == NULL) {
         return DLT_RETURN_WRONG_PARAMETER;
@@ -93,6 +168,16 @@ DltReturnValue dltUserLogWriteFinish(DltContextData *log) {
     }
 
     return dlt_user_log_write_finish(log);
+}
+
+DltReturnValue setContextDataUserTimestamp(DltContextData *log, uint32_t timestamp) {
+    if (log == NULL) {
+        return DLT_RETURN_WRONG_PARAMETER;
+    }
+
+    log->use_timestamp = DLT_USER_TIMESTAMP;
+    log->user_timestamp = timestamp;
+    return DLT_RETURN_OK;
 }
 
 DltReturnValue dltUserLogWriteString(DltContextData *log, const char *text) {
@@ -163,9 +248,29 @@ DltReturnValue registerLogLevelChangedCallback(
     DltContext *handle,
     void (*callback)(char context_id[DLT_ID_SIZE], uint8_t log_level, uint8_t trace_status)
 ) {
+    typedef DltReturnValue (*dlt_register_log_level_changed_callback_fn)(
+        DltContext *,
+        void (*)(char context_id[DLT_ID_SIZE], uint8_t log_level, uint8_t trace_status)
+    );
+    static dlt_register_log_level_changed_callback_fn callback_fn = NULL;
+    static int callback_fn_initialized = 0;
+
     if (handle == NULL || callback == NULL) {
         return DLT_RETURN_WRONG_PARAMETER;
     }
 
-    return dlt_register_log_level_changed_callback(handle, callback);
+    if (!callback_fn_initialized) {
+        callback_fn = (dlt_register_log_level_changed_callback_fn)dlsym(
+            RTLD_DEFAULT,
+            "dlt_register_log_level_changed_callback"
+        );
+        callback_fn_initialized = 1;
+    }
+
+    if (callback_fn == NULL) {
+        // Optional API not present in older libdlt releases.
+        return DLT_RETURN_ERROR;
+    }
+
+    return callback_fn(handle, callback);
 }

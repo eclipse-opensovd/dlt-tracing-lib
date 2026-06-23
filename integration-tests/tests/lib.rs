@@ -13,6 +13,8 @@
 //! This crate provides helper functions and utilities for testing DLT functionality,
 //! including DLT daemon connectivity checks and message verification via dlt-receive.
 use std::{
+    io::Read,
+    net::{SocketAddr, TcpStream},
     process::{self, Command, Stdio},
     sync::{Arc, Mutex, OnceLock},
     thread,
@@ -26,11 +28,26 @@ mod tracing_dlt;
 
 static DLT_DAEMON: OnceLock<Arc<Mutex<Option<process::Child>>>> = OnceLock::new();
 
+#[must_use]
+pub fn is_dlt_control_available() -> bool {
+    Command::new("dlt-control")
+        .arg("-h")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok()
+}
+
 pub(crate) fn change_dlt_log_level(
     level: DltLogLevel,
     app_id: Option<&DltId>,
     ctx_id: Option<&DltId>,
 ) {
+    assert!(
+        is_dlt_control_available(),
+        "dlt-control is required for log-level control tests"
+    );
+
     let level_num: i32 = level.into();
 
     let mut cmd = Command::new("dlt-control");
@@ -65,19 +82,13 @@ pub(crate) fn change_dlt_log_level(
 /// Returns true if a connection can be established, false otherwise.
 #[must_use]
 pub fn is_dlt_daemon_running() -> bool {
-    // Try to connect using dlt-receive with a timeout and check for successful connection message
-    let output = Command::new("timeout")
-        .args(["1", "dlt-receive", "-a", "127.0.0.1"])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output();
+    // Probe daemon TCP endpoint directly. This is independent of dlt-receive output format.
+    let addr: SocketAddr = match "127.0.0.1:3490".parse() {
+        Ok(addr) => addr,
+        Err(_) => return false,
+    };
 
-    if let Ok(output) = output {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        stdout.contains("New client connection")
-    } else {
-        false
-    }
+    TcpStream::connect_timeout(&addr, Duration::from_millis(250)).is_ok()
 }
 
 /// Start the DLT daemon if it's not already running
@@ -89,7 +100,9 @@ pub fn is_dlt_daemon_running() -> bool {
 /// Panics if the daemon cannot be started
 pub fn ensure_dlt_daemon_running() {
     let daemon_holder = DLT_DAEMON.get_or_init(|| Arc::new(Mutex::new(None)));
-    let mut daemon_guard = daemon_holder.lock().expect("Daemon lock failed");
+    let mut daemon_guard = daemon_holder
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
 
     // Check if daemon is already running externally
     if is_dlt_daemon_running() {
@@ -107,21 +120,36 @@ pub fn ensure_dlt_daemon_running() {
     if daemon_guard.is_none() {
         println!("Starting DLT daemon...");
         let daemon = Command::new("dlt-daemon")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .spawn()
             .expect("Failed to start dlt-daemon. Make sure it's installed.");
 
         *daemon_guard = Some(daemon);
 
-        // Give daemon time to start up
-        thread::sleep(Duration::from_millis(250));
+        // Drop lock before any potential panic to avoid poisoning shared state.
+        drop(daemon_guard);
 
-        // Verify it started successfully
-        assert!(
-            is_dlt_daemon_running(),
-            "DLT daemon started but is not responding"
-        );
+        // Wait up to 5 seconds for daemon readiness.
+        for _ in 0..25 {
+            if is_dlt_daemon_running() {
+                return;
+            }
+            thread::sleep(Duration::from_millis(200));
+        }
+
+        // Try to provide useful daemon stderr for diagnosis.
+        let daemon_holder = DLT_DAEMON.get_or_init(|| Arc::new(Mutex::new(None)));
+        let mut daemon_guard = daemon_holder
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut daemon_stderr = String::new();
+        if let Some(ref mut daemon) = *daemon_guard {
+            if let Some(ref mut stderr) = daemon.stderr {
+                let _ = stderr.read_to_string(&mut daemon_stderr);
+            }
+        }
+        panic!("DLT daemon started but is not responding. stderr: {daemon_stderr}");
     }
 }
 /// Helper for capturing and verifying DLT messages via dlt-receive

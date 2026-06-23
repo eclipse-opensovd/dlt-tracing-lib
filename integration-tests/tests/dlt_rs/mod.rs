@@ -17,7 +17,7 @@ use tokio::sync::broadcast;
 
 use crate::{
     DltReceiver, assert_contains, assert_contains_all, change_dlt_log_level,
-    ensure_dlt_daemon_running,
+    ensure_dlt_daemon_running, is_dlt_control_available,
 };
 
 #[tokio::test]
@@ -140,6 +140,11 @@ async fn test_registering_application_twice() {
 #[tokio::test]
 #[serial]
 async fn test_log_level_changed() {
+    if !is_dlt_control_available() {
+        eprintln!("Skipping test_log_level_changed: dlt-control not available");
+        return;
+    }
+
     async fn wait_for_log_level_changed_event(
         rx: &mut broadcast::Receiver<LogLevelChangedEvent>,
     ) -> LogLevelChangedEvent {
