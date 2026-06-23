@@ -137,32 +137,32 @@ async fn test_registering_application_twice() {
     let _ = DltApplication::register(&app_id2, "double register test second").unwrap();
 }
 
+async fn wait_for_log_level_changed_event(
+    rx: &mut broadcast::Receiver<LogLevelChangedEvent>,
+) -> LogLevelChangedEvent {
+    tokio::select! {
+        result = rx.recv() => {
+            match result {
+                Ok(event) => {
+                    event
+                }
+                Err(e) => {
+                    panic!("Failed to receive log level change: {e:?}");
+                }
+            }
+        }
+        () = tokio::time::sleep(tokio::time::Duration::from_secs(3)) => {
+            panic!("Timeout waiting for log level change");
+        }
+    }
+}
+
 #[tokio::test]
 #[serial]
 async fn test_log_level_changed() {
     if !is_dlt_control_available() {
         eprintln!("Skipping test_log_level_changed: dlt-control not available");
         return;
-    }
-
-    async fn wait_for_log_level_changed_event(
-        rx: &mut broadcast::Receiver<LogLevelChangedEvent>,
-    ) -> LogLevelChangedEvent {
-        tokio::select! {
-            result = rx.recv() => {
-                match result {
-                    Ok(event) => {
-                        event
-                    }
-                    Err(e) => {
-                        panic!("Failed to receive log level change: {e:?}");
-                    }
-                }
-            }
-            () = tokio::time::sleep(tokio::time::Duration::from_secs(3)) => {
-                panic!("Timeout waiting for log level change");
-            }
-        }
     }
 
     ensure_dlt_daemon_running();
