@@ -26,10 +26,10 @@ path = "src/lib.rs"
 
 [features]
 default = []
-generate-bindings = ["bindgen", "trace_load_ctrl"]
+generate-bindings = ["trace_load_ctrl"]
 # This is a feature, which might be necessary in some environments to enable
 trace_load_ctrl = []
 
 [build-dependencies]
 cc = { workspace = true }
-bindgen = { workspace = true, optional = true }
+bindgen = { workspace = true }

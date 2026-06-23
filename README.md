@@ -35,6 +35,10 @@ See each crate's README for detailed examples and API documentation.
 
 - Rust 1.88.0 or later
 - **libdlt** must be installed on your system
+- **clang/libclang** must be available, because `dlt-sys` generates bindings at build time
+
+You can select which installed DLT release is linked by setting `DLT_INCLUDE_DIR` and `DLT_LIB_DIR` during build.
+For full environment-variable options, see [dlt-sys/README.md](dlt-sys/README.md).
 
 
 ## Development

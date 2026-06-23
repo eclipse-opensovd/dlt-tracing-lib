@@ -53,6 +53,16 @@ jobs:
 
   build_and_test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dlt_label: v2.18.11
+            dlt_ref: e858f33ff77941f07bd6613c6ff3afaf59a5a9a4
+          - dlt_label: v2.18.10
+            dlt_ref: v2.18.10
+          - dlt_label: v3.0.0
+            dlt_ref: v3.0.0
 
     steps:
       - name: Checkout repository
@@ -60,6 +70,8 @@ jobs:
         with:
           submodules: false
       - uses: ./.github/actions/setup-dlt
+        with:
+          dlt-ref: ${{ matrix.dlt_ref }}
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
       - name: Install cargo-deny

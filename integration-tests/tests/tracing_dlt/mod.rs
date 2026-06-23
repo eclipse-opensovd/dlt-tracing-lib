@@ -16,7 +16,10 @@ use serial_test::serial;
 use tracing_dlt::{DltApplication, DltId, DltLayer, DltLogLevel};
 use tracing_subscriber::{Registry, layer::SubscriberExt};
 
-use crate::{DltReceiver, assert_contains, change_dlt_log_level, ensure_dlt_daemon_running};
+use crate::{
+    DltReceiver, assert_contains, change_dlt_log_level, ensure_dlt_daemon_running,
+    is_dlt_control_available,
+};
 
 struct LogFile {
     path: std::path::PathBuf,
@@ -209,6 +212,11 @@ async fn test_concurrent_logging() {
 #[tokio::test]
 #[serial]
 async fn test_debug_logs() {
+    if !is_dlt_control_available() {
+        eprintln!("Skipping test_debug_logs: dlt-control not available");
+        return;
+    }
+
     let _guard = init_tracing(false);
     let receiver = DltReceiver::start();
 
