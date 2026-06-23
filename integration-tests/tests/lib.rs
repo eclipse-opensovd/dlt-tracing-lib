@@ -144,10 +144,10 @@ pub fn ensure_dlt_daemon_running() {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut daemon_stderr = String::new();
-        if let Some(ref mut daemon) = *daemon_guard {
-            if let Some(ref mut stderr) = daemon.stderr {
-                let _ = stderr.read_to_string(&mut daemon_stderr);
-            }
+        if let Some(ref mut daemon) = *daemon_guard
+            && let Some(ref mut stderr) = daemon.stderr
+        {
+            let _ = stderr.read_to_string(&mut daemon_stderr);
         }
         panic!("DLT daemon started but is not responding. stderr: {daemon_stderr}");
     }

@@ -84,10 +84,10 @@ fn main() {
     }
     let lib_name = env_non_empty(DLT_LIB_NAME).unwrap_or_else(|| "dlt".to_string());
     println!("cargo:rustc-link-lib=dylib={lib_name}");
-    if let Ok(target_os) = std::env::var("CARGO_CFG_TARGET_OS") {
-        if target_os == "linux" || target_os == "android" {
-            println!("cargo:rustc-link-lib=dylib=dl");
-        }
+    if let Ok(target_os) = std::env::var("CARGO_CFG_TARGET_OS")
+        && (target_os == "linux" || target_os == "android")
+    {
+        println!("cargo:rustc-link-lib=dylib=dl");
     }
 
     println!("cargo:rerun-if-changed={wrapper_dir}/{DLT_HEADER}");
@@ -99,7 +99,7 @@ fn main() {
 fn generate_bindings(wrapper_dir: &str) {
     let mut builder = bindgen::Builder::default()
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-        .header(format!("{}/{}", wrapper_dir, DLT_HEADER));
+        .header(format!("{wrapper_dir}/{DLT_HEADER}"));
 
     // Add clang args for explicit header locations.
     if let Some(include) = env_non_empty(DLT_INCLUDE_DIR) {
@@ -161,12 +161,16 @@ fn generate_bindings(wrapper_dir: &str) {
         // Callback registration
         .allowlist_function("registerLogLevelChangedCallback")
         .generate()
-        .unwrap_or_else(|err| panic!("Error generating bindings: {}", err))
+        .unwrap_or_else(|err| panic!("Error generating bindings: {err}"))
         .write_to_file(&target_file)
-        .unwrap_or_else(|err| panic!("Error writing bindings: {}", err));
+        .unwrap_or_else(|err| panic!("Error writing bindings: {err}"));
 
-    prepend_copyright(target_file.to_str().expect("Invalid generated bindings path"))
-        .expect("Error prepending copyright header");
+    prepend_copyright(
+        target_file
+            .to_str()
+            .expect("Invalid generated bindings path"),
+    )
+    .expect("Error prepending copyright header");
 }
 
 fn prepend_copyright(file_path: &str) -> std::io::Result<()> {
