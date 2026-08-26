@@ -23,7 +23,7 @@ concurrency:
 jobs:
   cargo-publish:
     permissions:
-      content: read
+      contents: read
     name: publish to crates.io
     # This will publish to crates.io if secrets.CRATES_TOKEN is set in the workspace, otherwise do a dry-run
     runs-on: ubuntu-latest
@@ -42,14 +42,14 @@ jobs:
       - uses: ./.github/actions/setup-dlt
       - name: Publish to crates.io
         run: |
-          # Determine publish arguments based on CRATES_API_TOKEN
+          # Determine publish arguments based on CRATES_TOKEN
           PUBLISH_ARGS="--all-features"
-          if [ -z "$CRATES_API_TOKEN" ]; then
-            PUBLISH_ARGS="$CRATES_API_TOKEN --dry-run"
-            echo "CRATES_API_TOKEN is not set. Performing a dry-run publish for all crates."
+          if [ -z "$CRATES_TOKEN" ]; then
+            PUBLISH_ARGS="$PUBLISH_ARGS --dry-run"
+            echo "CRATES_TOKEN is not set. Performing a dry-run publish for all crates."
           else
-            PUBLISH_ARGS="$PUBLISH_ARGS --token ${CRATES_API_TOKEN}"
-            echo "CRATES_API_TOKEN is set. Performing a real publish for all crates."
+            PUBLISH_ARGS="$PUBLISH_ARGS --token ${CRATES_TOKEN}"
+            echo "CRATES_TOKEN is set. Performing a real publish for all crates."
           fi
 
           echo "Attempting to publish dlt-sys..."
