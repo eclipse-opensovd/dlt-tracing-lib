@@ -26,6 +26,8 @@ Please note that this is only implements functionality required for dlt-rs and d
     ```
 - **bindgen prerequisites** must be available at build time (`clang` and `libclang`).
   `dlt-sys` generates Rust bindings on the fly during `cargo build`, using the installed DLT headers.
+- **pkg-config** is used to locate DLT when available. A standard DLT installation provides
+  `automotive-dlt.pc`, in which case no configuration is needed at all.
 
 ## Usage
 This is a low-level crate with unsafe APIs. Most users should use [`dlt-rs`](https://crates.io/crates/dlt-rs) instead for a safe, idiomatic Rust API.
@@ -43,14 +45,18 @@ This is a low-level crate with unsafe APIs. Most users should use [`dlt-rs`](htt
 - In CI, the repository setup action supports selecting a DLT daemon ref (`dlt-ref`) so workflows can validate multiple releases.
 
 ### Selecting The Linked DLT Release
-When consuming this crate from crates.io, select the installed DLT release by pointing include and library paths to that installation.
+`dlt-sys` looks for DLT in this order, stopping at the first that succeeds:
 
-- `DLT_INCLUDE_DIR`: include directory containing `dlt/` headers
-- `DLT_LIB_DIR`: library directory containing `libdlt`
-- `DLT_USER_INCLUDE_DIR`: optional additional include directory
-- `DLT_LIB_NAME`: optional library name override (default: `dlt`)
+1. **Explicit paths** from the environment. Setting any of these skips the pkg-config probe.
+   - `DLT_INCLUDE_DIR`: include directory containing `dlt/` headers
+   - `DLT_LIB_DIR`: library directory containing `libdlt`
+   - `DLT_USER_INCLUDE_DIR`: optional additional include directory
+   - `DLT_LIB_NAME`: optional library name override (default: `dlt`)
+2. **pkg-config**, querying the `automotive-dlt` module. Set `PKG_CONFIG_PATH` to select a
+   particular installation, or `DLT_NO_PKG_CONFIG=1` to skip this step.
+3. **Compiler and linker defaults**, linking plain `-ldlt`.
 
-Example:
+Example, for an installation the compiler does not find on its own:
 
 ```bash
 DLT_INCLUDE_DIR=/opt/homebrew/include \

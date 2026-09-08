@@ -32,6 +32,7 @@ tokio = { version = "1.48.0", default-features = false, features = [
 ] }
 bindgen = "0.72.1"
 cc = "1.2.47"
+pkg-config = "0.3.34"
 indexmap = "2.12.1"
 serial_test = "3.2.0"
 

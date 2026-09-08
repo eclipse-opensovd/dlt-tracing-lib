@@ -20,6 +20,10 @@ const DLT_INCLUDE_DIR: &str = "DLT_INCLUDE_DIR";
 const DLT_USER_INCLUDE_DIR: &str = "DLT_USER_INCLUDE_DIR";
 const DLT_LIB_DIR: &str = "DLT_LIB_DIR";
 const DLT_LIB_NAME: &str = "DLT_LIB_NAME";
+const DLT_NO_PKG_CONFIG: &str = "DLT_NO_PKG_CONFIG";
+
+/// Name of the pkg-config module installed by dlt-daemon (`WITH_DLT_PKGCONFIG=ON`).
+const DLT_PKG_CONFIG_NAME: &str = "automotive-dlt";
 
 /// Default library name, overridable through [`DLT_LIB_NAME`].
 const DLT_DEFAULT_LIB_NAME: &str = "dlt";
@@ -65,6 +69,9 @@ fn push_include_dir(dirs: &mut Vec<PathBuf>, include: &str) {
 }
 
 /// Explicit include and library paths, for unusual installations.
+///
+/// Setting any of these suppresses the pkg-config probe, so the configured paths
+/// are the ones used.
 fn location_from_env() -> Option<DltLocation> {
     let include = env_non_empty(DLT_INCLUDE_DIR);
     let user_include = env_non_empty(DLT_USER_INCLUDE_DIR);
@@ -84,9 +91,33 @@ fn location_from_env() -> Option<DltLocation> {
     Some(location)
 }
 
-/// Locates libdlt: explicit environment first, then compiler and linker defaults.
+/// Asks pkg-config where libdlt is.
+///
+/// Link lines are emitted by this script rather than by pkg-config, so that the
+/// flags stay under the control of [`emit_link_flags`].
+fn location_from_pkg_config() -> Option<DltLocation> {
+    let library = pkg_config::Config::new()
+        .cargo_metadata(false)
+        .probe(DLT_PKG_CONFIG_NAME)
+        .ok()?;
+
+    Some(DltLocation {
+        include_dirs: library.include_paths,
+        link_dirs: library.link_paths,
+    })
+}
+
+/// Locates libdlt: explicit environment first, then pkg-config, then compiler defaults.
 fn locate() -> DltLocation {
-    location_from_env().unwrap_or_default()
+    if let Some(location) = location_from_env() {
+        return location;
+    }
+    if env_non_empty(DLT_NO_PKG_CONFIG).is_none()
+        && let Some(location) = location_from_pkg_config()
+    {
+        return location;
+    }
+    DltLocation::default()
 }
 
 fn emit_link_flags(location: &DltLocation, lib_name: &str, target_os: &str) {
@@ -108,6 +139,7 @@ fn main() {
         DLT_USER_INCLUDE_DIR,
         DLT_LIB_DIR,
         DLT_LIB_NAME,
+        DLT_NO_PKG_CONFIG,
     ] {
         println!("cargo:rerun-if-env-changed={var}");
     }

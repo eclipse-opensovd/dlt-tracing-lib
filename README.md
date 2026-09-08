@@ -37,7 +37,8 @@ See each crate's README for detailed examples and API documentation.
 - **libdlt** must be installed on your system
 - **clang/libclang** must be available, because `dlt-sys` generates bindings at build time
 
-You can select which installed DLT release is linked by setting `DLT_INCLUDE_DIR` and `DLT_LIB_DIR` during build.
+A standard DLT installation is found automatically through `pkg-config`. To select a different
+installation, set `DLT_INCLUDE_DIR` and `DLT_LIB_DIR` during the build.
 For full environment-variable options, see [dlt-sys/README.md](dlt-sys/README.md).
 
 
