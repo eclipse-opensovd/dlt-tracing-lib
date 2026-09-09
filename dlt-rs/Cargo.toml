@@ -40,6 +40,6 @@ tokio = { workspace = true, features = [
 
 [features]
 default = []
-trace_load_ctrl = []
+trace_load_ctrl = ["dlt-sys/trace_load_ctrl"]
 
 [build-dependencies]
