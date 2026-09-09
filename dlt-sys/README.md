@@ -51,10 +51,11 @@ This is a low-level crate with unsafe APIs. Most users should use [`dlt-rs`](htt
    - `DLT_INCLUDE_DIR`: include directory containing `dlt/` headers
    - `DLT_LIB_DIR`: library directory containing `libdlt`
    - `DLT_USER_INCLUDE_DIR`: optional additional include directory
-   - `DLT_LIB_NAME`: optional library name override (default: `dlt`)
 2. **pkg-config**, querying the `automotive-dlt` module. Set `PKG_CONFIG_PATH` to select a
    particular installation, or `DLT_NO_PKG_CONFIG=1` to skip this step.
 3. **Compiler and linker defaults**, linking plain `-ldlt`.
+
+`DLT_LIB_NAME` overrides the library name (default: `dlt`) and does not affect discovery.
 
 Example, for an installation the compiler does not find on its own:
 
