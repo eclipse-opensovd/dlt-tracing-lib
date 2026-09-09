@@ -91,6 +91,16 @@ fn location_from_env() -> Option<DltLocation> {
     Some(location)
 }
 
+/// Warns about pkg-config failures the fallback cannot recover from. A plain probe
+/// failure stays quiet: DLT may still sit on the default search path.
+fn warn_pkg_config_failure(err: &pkg_config::Error) {
+    if matches!(err, pkg_config::Error::ProbeFailure { .. }) {
+        return;
+    }
+    let detail = err.to_string().replace('\n', " ");
+    println!("cargo:warning=pkg-config could not be consulted for {DLT_PKG_CONFIG_NAME}: {detail}");
+}
+
 /// Asks pkg-config where libdlt is.
 ///
 /// Link lines are emitted by this script rather than by pkg-config, so that the
@@ -99,6 +109,7 @@ fn location_from_pkg_config() -> Option<DltLocation> {
     let library = pkg_config::Config::new()
         .cargo_metadata(false)
         .probe(DLT_PKG_CONFIG_NAME)
+        .inspect_err(warn_pkg_config_failure)
         .ok()?;
 
     Some(DltLocation {
