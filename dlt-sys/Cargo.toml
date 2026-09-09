@@ -33,3 +33,4 @@ trace_load_ctrl = []
 [build-dependencies]
 cc = { workspace = true }
 bindgen = { workspace = true }
+pkg-config = { workspace = true }
