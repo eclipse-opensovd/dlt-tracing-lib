@@ -14,9 +14,15 @@
 // Requires system DLT headers - set DLT_INCLUDE_DIR environment variable or modify include paths accordingly.
 #include "dlt-wrapper.h"
 #include <dlt/dlt_user.h>
-#include <dlfcn.h>
 #include <stdlib.h>
 #include <string.h>
+
+// Absent from older libdlt releases. A weak reference resolves to NULL when the symbol is missing.
+extern DltReturnValue dlt_unregister_app_flush_buffered_logs(void) __attribute__((weak));
+extern DltReturnValue dlt_register_log_level_changed_callback(
+    DltContext *handle,
+    void (*dlt_log_level_changed_callback)(char context_id[DLT_ID_SIZE], uint8_t log_level, uint8_t trace_status)
+) __attribute__((weak));
 
 DltReturnValue registerApplication(const char *appId, const char *appDescription) {
     if (appId == NULL) {
@@ -26,20 +32,8 @@ DltReturnValue registerApplication(const char *appId, const char *appDescription
 }
 
 DltReturnValue unregisterApplicationFlushBufferedLogs(void) {
-    typedef DltReturnValue (*dlt_unregister_app_flush_buffered_logs_fn)(void);
-    static dlt_unregister_app_flush_buffered_logs_fn flush_fn = NULL;
-    static int flush_fn_initialized = 0;
-
-    if (!flush_fn_initialized) {
-        flush_fn = (dlt_unregister_app_flush_buffered_logs_fn)dlsym(
-            RTLD_DEFAULT,
-            "dlt_unregister_app_flush_buffered_logs"
-        );
-        flush_fn_initialized = 1;
-    }
-
-    if (flush_fn != NULL) {
-        return flush_fn();
+    if (dlt_unregister_app_flush_buffered_logs != NULL) {
+        return dlt_unregister_app_flush_buffered_logs();
     }
 
     // Fallback for older libdlt releases without buffered-flush API.
@@ -248,29 +242,14 @@ DltReturnValue registerLogLevelChangedCallback(
     DltContext *handle,
     void (*callback)(char context_id[DLT_ID_SIZE], uint8_t log_level, uint8_t trace_status)
 ) {
-    typedef DltReturnValue (*dlt_register_log_level_changed_callback_fn)(
-        DltContext *,
-        void (*)(char context_id[DLT_ID_SIZE], uint8_t log_level, uint8_t trace_status)
-    );
-    static dlt_register_log_level_changed_callback_fn callback_fn = NULL;
-    static int callback_fn_initialized = 0;
-
     if (handle == NULL || callback == NULL) {
         return DLT_RETURN_WRONG_PARAMETER;
     }
 
-    if (!callback_fn_initialized) {
-        callback_fn = (dlt_register_log_level_changed_callback_fn)dlsym(
-            RTLD_DEFAULT,
-            "dlt_register_log_level_changed_callback"
-        );
-        callback_fn_initialized = 1;
-    }
-
-    if (callback_fn == NULL) {
+    if (dlt_register_log_level_changed_callback == NULL) {
         // Optional API not present in older libdlt releases.
         return DLT_RETURN_ERROR;
     }
 
-    return callback_fn(handle, callback);
+    return dlt_register_log_level_changed_callback(handle, callback);
 }
