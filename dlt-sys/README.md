@@ -40,7 +40,7 @@ This is a low-level crate with unsafe APIs. Most users should use [`dlt-rs`](htt
 - `dlt-sys` is designed to work with multiple `libdlt` releases.
 - Bindings are generated at build time from the locally installed DLT headers, so the Rust FFI shape matches the installed release.
 - `DltContextData` uses zero-initialization in Rust to remain source-compatible when `libdlt` adds fields.
-- Optional C APIs are resolved dynamically in the wrapper at runtime.
+- Optional C APIs are bound through weak symbols in the wrapper, so they resolve whether `libdlt` is linked statically or dynamically.
   If `dlt_register_log_level_changed_callback` is unavailable in an older `libdlt`, callback registration returns a DLT error instead of failing at link time.
 - In CI, the repository setup action supports selecting a DLT daemon ref (`dlt-ref`) so workflows can validate multiple releases.
 

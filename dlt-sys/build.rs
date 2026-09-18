@@ -131,17 +131,12 @@ fn locate() -> DltLocation {
     DltLocation::default()
 }
 
-fn emit_link_flags(location: &DltLocation, lib_name: &str, target_os: &str) {
+fn emit_link_flags(location: &DltLocation, lib_name: &str) {
     for dir in &location.link_dirs {
         println!("cargo:rustc-link-search=native={}", dir.display());
     }
 
     println!("cargo:rustc-link-lib=dylib={lib_name}");
-
-    if target_os == "linux" || target_os == "android" {
-        // The wrapper resolves optional libdlt APIs with dlsym.
-        println!("cargo:rustc-link-lib=dylib=dl");
-    }
 }
 
 fn main() {
@@ -158,7 +153,6 @@ fn main() {
     let project_dir = std::env::var("CARGO_MANIFEST_DIR")
         .expect("CARGO_MANIFEST_DIR environment variable not set");
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR is not set by Cargo"));
-    let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
 
     let wrapper_dir = format!("{project_dir}/wrapper");
 
@@ -178,7 +172,7 @@ fn main() {
 
     build.compile(DLT_WRAPPER);
 
-    emit_link_flags(&location, &lib_name, &target_os);
+    emit_link_flags(&location, &lib_name);
 
     println!("cargo:rerun-if-changed={wrapper_dir}/{DLT_HEADER}");
     println!("cargo:rerun-if-changed={wrapper_dir}/{DLT_SRC}");
