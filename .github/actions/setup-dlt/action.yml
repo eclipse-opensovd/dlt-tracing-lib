@@ -19,7 +19,7 @@ inputs:
   dlt-ref:
     description: Git branch/tag/commit of DLT daemon to build
     required: false
-    default: e858f33ff77941f07bd6613c6ff3afaf59a5a9a4
+    default: 47d1def2510f2123c901de90b8a9dc7f1572d32b
 runs:
   using: composite
   steps:
